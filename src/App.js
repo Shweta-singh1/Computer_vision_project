@@ -1,582 +1,1196 @@
+// import React, { useState, useEffect } from 'react';
+// import { Check, ChevronLeft, ChevronRight, RotateCcw, GripVertical, Eye } from 'lucide-react';
+
+// import demo1 from './assets/demo1.png';
+// import demo2 from './assets/demo2.png';
+// import demo3 from './assets/demo3.png';
+
+// export default function DepthRankingApp() {
+//   const stimulusImages = [
+//     { 
+//       id: 1, 
+//       url: demo1, 
+//       objects: [
+//         { id: 1, label: 'Object 1' },
+//         { id: 2, label: 'Object 2' },
+//         { id: 3, label: 'Object 3' },
+//         { id: 4, label: 'Object 4' }
+//       ]
+//     },
+//     { 
+//       id: 2, 
+//       url: demo2, 
+//       objects: [
+//         { id: 1, label: 'Object 1' },
+//         { id: 2, label: 'Object 2' },
+//         { id: 3, label: 'Object 3' },
+//         { id: 4, label: 'Object 4' }
+//       ]
+//     },
+//     { 
+//       id: 3, 
+//       url: demo3, 
+//       objects: [
+//         { id: 1, label: 'Object 1' },
+//         { id: 2, label: 'Object 2' },
+//         { id: 3, label: 'Object 3' },
+//         { id: 4, label: 'Object 4' }
+//       ]
+//     },
+//   ];
+
+//   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+//   const [rankings, setRankings] = useState(
+//     stimulusImages[0].objects.map(obj => ({ ...obj, rank: obj.id }))
+//   );
+//   const [submitted, setSubmitted] = useState(false);
+//   const [allResults, setAllResults] = useState([]);
+//   const [draggedItem, setDraggedItem] = useState(null);
+//   const [dragOverIndex, setDragOverIndex] = useState(null);
+  
+//   // Participant information
+//   const [participantId, setParticipantId] = useState('');
+//   const [age, setAge] = useState('');
+//   const [gender, setGender] = useState('');
+//   const [dominantEye, setDominantEye] = useState('');
+//   const [hasConsented, setHasConsented] = useState(false);
+  
+//   const [sessionStartTime] = useState(new Date().toISOString());
+//   const [showConsentForm, setShowConsentForm] = useState(true);
+//   const [stimulusStartTime, setStimulusStartTime] = useState(new Date().toISOString());
+//   const [studyComplete, setStudyComplete] = useState(false);
+
+//   const currentStimulus = stimulusImages[currentImageIndex];
+
+//   // Generate unique participant ID
+//   const generateParticipantId = () => {
+//     const timestamp = Date.now();
+//     const random = Math.floor(Math.random() * 1000);
+//     return `P${timestamp}${random}`;
+//   };
+
+//   // Save results to backend/storage whenever allResults changes
+//   useEffect(() => {
+//     if (allResults.length > 0 && !studyComplete) {
+//       saveToBackend(allResults);
+//     }
+//   }, [allResults]);
+
+//   // Check if study is complete
+//   useEffect(() => {
+//     if (allResults.length === stimulusImages.length && allResults.length > 0) {
+//       setStudyComplete(true);
+//       // Final save with complete flag
+//       saveToBackend(allResults, true);
+//     }
+//   }, [allResults]);
+
+//   const saveToBackend = async (results, isComplete = false) => {
+//     try {
+//       await fetch('http://localhost:3001/api/save-results', {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//         },
+//         body: JSON.stringify({
+//           participantId: participantId,
+//           sessionId: sessionStartTime,
+//           participantInfo: {
+//             age,
+//             gender,
+//             dominantEye
+//           },
+//           results: results,
+//           isComplete: isComplete,
+//           completedAt: new Date().toISOString()
+//         }),
+//       });
+      
+//       console.log('Results saved successfully');
+//     } catch (error) {
+//       console.log('Saving to localStorage as fallback');
+//       const existingData = JSON.parse(localStorage.getItem('depthStudyResults') || '[]');
+//       const updatedData = [...existingData, {
+//         participantId: participantId,
+//         sessionId: sessionStartTime,
+//         participantInfo: { age, gender, dominantEye },
+//         results: results,
+//         isComplete: isComplete,
+//         savedAt: new Date().toISOString()
+//       }];
+//       localStorage.setItem('depthStudyResults', JSON.stringify(updatedData));
+//     }
+//   };
+
+//   const handleDragStart = (e, index) => {
+//     setDraggedItem(index);
+//     e.dataTransfer.effectAllowed = 'move';
+//   };
+
+//   const handleDragOver = (e, index) => {
+//     e.preventDefault();
+//     setDragOverIndex(index);
+//   };
+
+//   const handleDragLeave = () => {
+//     setDragOverIndex(null);
+//   };
+
+//   const handleDrop = (e, dropIndex) => {
+//     e.preventDefault();
+    
+//     if (draggedItem === null || draggedItem === dropIndex) {
+//       setDraggedItem(null);
+//       setDragOverIndex(null);
+//       return;
+//     }
+
+//     const newRankings = [...rankings];
+//     const draggedElement = newRankings[draggedItem];
+    
+//     newRankings.splice(draggedItem, 1);
+//     newRankings.splice(dropIndex, 0, draggedElement);
+    
+//     const updatedRankings = newRankings.map((item, index) => ({
+//       ...item,
+//       rank: index + 1
+//     }));
+
+//     setRankings(updatedRankings);
+//     setDraggedItem(null);
+//     setDragOverIndex(null);
+//   };
+
+//   const handleDragEnd = () => {
+//     setDraggedItem(null);
+//     setDragOverIndex(null);
+//   };
+
+//   const reset = () => {
+//     setRankings(currentStimulus.objects.map(obj => ({ ...obj, rank: obj.id })));
+//     setSubmitted(false);
+//   };
+
+//   const submit = () => {
+//     const currentTime = new Date().toISOString();
+//     const timeSpent = Math.round((new Date(currentTime) - new Date(stimulusStartTime)) / 1000);
+    
+//     const result = {
+//       participantId: participantId,
+//       stimulusId: currentStimulus.id,
+//       rankings: rankings.map((r, idx) => ({ 
+//         objectId: r.id, 
+//         objectLabel: r.label, 
+//         rankPosition: idx + 1 
+//       })),
+//       timestamp: currentTime,
+//       timeSpent: timeSpent
+//     };
+    
+//     setAllResults(prev => [...prev, result]);
+//     setSubmitted(true);
+//   };
+
+//   const nextImage = () => {
+//     if (currentImageIndex < stimulusImages.length - 1) {
+//       setCurrentImageIndex(prev => prev + 1);
+//       setRankings(stimulusImages[currentImageIndex + 1].objects.map(obj => ({ ...obj, rank: obj.id })));
+//       setSubmitted(false);
+//       setStimulusStartTime(new Date().toISOString());
+//     }
+//   };
+
+//   const prevImage = () => {
+//     if (currentImageIndex > 0) {
+//       setCurrentImageIndex(prev => prev - 1);
+//       setRankings(stimulusImages[currentImageIndex - 1].objects.map(obj => ({ ...obj, rank: obj.id })));
+//       setSubmitted(false);
+//       setStimulusStartTime(new Date().toISOString());
+//     }
+//   };
+
+//   const startStudy = () => {
+//     if (hasConsented && age && gender && dominantEye) {
+//       const newParticipantId = generateParticipantId();
+//       setParticipantId(newParticipantId);
+//       setShowConsentForm(false);
+//       setStimulusStartTime(new Date().toISOString());
+//     }
+//   };
+
+//   const restartStudy = () => {
+//     // Reset all state for new participant
+//     setCurrentImageIndex(0);
+//     setRankings(stimulusImages[0].objects.map(obj => ({ ...obj, rank: obj.id })));
+//     setSubmitted(false);
+//     setAllResults([]);
+//     setAge('');
+//     setGender('');
+//     setDominantEye('');
+//     setHasConsented(false);
+//     setShowConsentForm(true);
+//     setStudyComplete(false);
+//     setStimulusStartTime(new Date().toISOString());
+//   };
+
+//   const canStart = hasConsented && age && gender && dominantEye;
+
+//   return (
+//     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+//       {showConsentForm ? (
+//         <div className="max-w-3xl mx-auto mt-12">
+//           <div className="bg-white rounded-xl shadow-lg p-8">
+//             <h1 className="text-3xl font-bold text-slate-800 mb-6 text-center">
+//               Depth Perception Study
+//             </h1>
+            
+//             {/* Instructions */}
+//             <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+//               <h2 className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2">
+//                 <Eye className="w-5 h-5" />
+//                 Study Instructions
+//               </h2>
+//               <ul className="space-y-2 text-slate-700">
+//                 <li className="flex gap-2">
+//                   <span className="font-semibold">•</span>
+//                   <span>You will be shown {stimulusImages.length} images with marked objects.</span>
+//                 </li>
+//                 <li className="flex gap-2">
+//                   <span className="font-semibold">•</span>
+//                   <span>For each image, rank the objects by their depth from <strong>nearest to farthest</strong>.</span>
+//                 </li>
+//                 <li className="flex gap-2">
+//                   <span className="font-semibold">•</span>
+//                   <span><strong>Important:</strong> Close one eye during the experiment for monocular depth estimation.</span>
+//                 </li>
+//                 <li className="flex gap-2">
+//                   <span className="font-semibold">•</span>
+//                   <span>Use drag-and-drop to arrange objects in order.</span>
+//                 </li>
+//                 <li className="flex gap-2">
+//                   <span className="font-semibold">•</span>
+//                   <span>Take your time and be as accurate as possible.</span>
+//                 </li>
+//               </ul>
+//             </div>
+
+//             {/* Participant Information */}
+//             <div className="mb-6">
+//               <h3 className="text-lg font-semibold text-slate-800 mb-4">Participant Information</h3>
+              
+//               <div className="space-y-4">
+//                 <div>
+//                   <label className="block text-sm font-medium text-slate-700 mb-2">
+//                     Age
+//                   </label>
+//                   <input
+//                     type="number"
+//                     value={age}
+//                     onChange={(e) => setAge(e.target.value)}
+//                     placeholder="Enter your age"
+//                     min="18"
+//                     max="100"
+//                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none"
+//                   />
+//                 </div>
+
+//                 <div>
+//                   <label className="block text-sm font-medium text-slate-700 mb-2">
+//                     Gender
+//                   </label>
+//                   <select
+//                     value={gender}
+//                     onChange={(e) => setGender(e.target.value)}
+//                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none"
+//                   >
+//                     <option value="">Select gender</option>
+//                     <option value="male">Male</option>
+//                     <option value="female">Female</option>
+//                     <option value="other">Other</option>
+//                     <option value="prefer-not-to-say">Prefer not to say</option>
+//                   </select>
+//                 </div>
+
+//                 <div>
+//                   <label className="block text-sm font-medium text-slate-700 mb-2">
+//                     Dominant Eye
+//                   </label>
+//                   <select
+//                     value={dominantEye}
+//                     onChange={(e) => setDominantEye(e.target.value)}
+//                     className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none"
+//                   >
+//                     <option value="">Select dominant eye</option>
+//                     <option value="left">Left</option>
+//                     <option value="right">Right</option>
+//                     <option value="unsure">Not sure</option>
+//                   </select>
+//                   <p className="text-xs text-slate-500 mt-1">
+//                     Tip: To find your dominant eye, form a triangle with your hands and look at a distant object through it. Close one eye at a time - your dominant eye keeps the object centered.
+//                   </p>
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Consent */}
+//             <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+//               <label className="flex items-start gap-3 cursor-pointer">
+//                 <input
+//                   type="checkbox"
+//                   checked={hasConsented}
+//                   onChange={(e) => setHasConsented(e.target.checked)}
+//                   className="mt-1 w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+//                 />
+//                 <span className="text-sm text-slate-700">
+//                   I confirm that I have <strong>normal or corrected vision</strong>, <strong>no color blindness</strong>, 
+//                   and consent to participate in this study. I understand that my responses will be recorded anonymously 
+//                   for research purposes.
+//                 </span>
+//               </label>
+//             </div>
+
+//             <button
+//               onClick={startStudy}
+//               disabled={!canStart}
+//               className={`w-full py-4 rounded-lg font-semibold transition-colors ${
+//                 canStart
+//                   ? 'bg-blue-600 hover:bg-blue-700 text-white'
+//                   : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+//               }`}
+//             >
+//               {!canStart ? 'Please complete all fields and consent' : 'Begin Study'}
+//             </button>
+//           </div>
+//         </div>
+//       ) : studyComplete ? (
+//         <div className="max-w-2xl mx-auto mt-20">
+//           <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+//             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+//               <Check className="w-10 h-10 text-green-600" />
+//             </div>
+//             <h2 className="text-3xl font-bold text-slate-800 mb-4">
+//               Study Complete!
+//             </h2>
+//             <p className="text-lg text-slate-600 mb-6">
+//               Thank you for participating in this depth perception study. Your responses have been recorded.
+//             </p>
+//             <div className="bg-slate-50 rounded-lg p-4 mb-6">
+//               <p className="text-sm text-slate-600">
+//                 <strong>Participant ID:</strong> {participantId}
+//               </p>
+//               <p className="text-sm text-slate-600">
+//                 <strong>Completed Stimuli:</strong> {allResults.length} / {stimulusImages.length}
+//               </p>
+//             </div>
+//             <button
+//               onClick={restartStudy}
+//               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+//             >
+//               Start New Participant
+//             </button>
+//           </div>
+//         </div>
+//       ) : (
+//         <div className="max-w-6xl mx-auto">
+//           <div className="text-center mb-8">
+//             <h1 className="text-4xl font-bold text-slate-800 mb-2">
+//               Depth Perception Study
+//             </h1>
+//             <p className="text-slate-600 mb-4">
+//               Drag objects to rank them from <span className="font-semibold text-blue-600">closest (top)</span> to <span className="font-semibold text-purple-600">farthest (bottom)</span>
+//             </p>
+//             <div className="flex items-center justify-center gap-4">
+//               <div className="bg-white px-4 py-2 rounded-lg shadow-sm">
+//                 <span className="text-sm text-slate-600">Stimulus </span>
+//                 <span className="font-bold text-slate-800">{currentImageIndex + 1}</span>
+//                 <span className="text-sm text-slate-600"> of {stimulusImages.length}</span>
+//               </div>
+//               <div className="bg-white px-4 py-2 rounded-lg shadow-sm">
+//                 <span className="text-sm text-slate-600">Completed: </span>
+//                 <span className="font-bold text-green-600">{allResults.length}</span>
+//               </div>
+//               <div className="bg-amber-100 px-4 py-2 rounded-lg shadow-sm border border-amber-300">
+//                 <span className="text-sm text-amber-800 font-medium">👁️ Remember: Keep one eye closed</span>
+//               </div>
+//             </div>
+//           </div>
+
+//           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+//             {/* Image Section */}
+//             <div className="bg-white rounded-xl shadow-lg p-6">
+//               <div className="flex items-center justify-between mb-4">
+//                 <h2 className="text-xl font-semibold text-slate-800">Stimulus</h2>
+//                 <div className="flex gap-2">
+//                   <button
+//                     onClick={prevImage}
+//                     disabled={currentImageIndex === 0}
+//                     className="p-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+//                     title="Previous stimulus"
+//                   >
+//                     <ChevronLeft className="w-5 h-5" />
+//                   </button>
+//                   <button
+//                     onClick={nextImage}
+//                     disabled={currentImageIndex === stimulusImages.length - 1}
+//                     className="p-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+//                     title="Next stimulus"
+//                   >
+//                     <ChevronRight className="w-5 h-5" />
+//                   </button>
+//                 </div>
+//               </div>
+//               <div className="relative">
+//                 <img
+//                   src={currentStimulus.url}
+//                   alt={`Stimulus ${currentStimulus.id}`}
+//                   className="w-full rounded-lg shadow-md"
+//                 />
+//                 <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg text-sm font-medium">
+//                   Image {currentImageIndex + 1}
+//                 </div>
+//               </div>
+//             </div>
+
+//             {/* Ranking Section */}
+//             <div className="bg-white rounded-xl shadow-lg p-6">
+//               <div className="flex items-center justify-between mb-4">
+//                 <h2 className="text-xl font-semibold text-slate-800">Rankings</h2>
+//                 <button
+//                   onClick={reset}
+//                   className="flex items-center gap-2 px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+//                 >
+//                   <RotateCcw className="w-4 h-4" />
+//                   Reset
+//                 </button>
+//               </div>
+
+//               <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+//                 <p className="text-sm text-blue-800 text-center">
+//                   💡 <span className="font-medium">Drag and drop</span> to reorder objects
+//                 </p>
+//               </div>
+
+//               <div className="space-y-2 mb-6">
+//                 {rankings.map((item, index) => (
+//                   <div
+//                     key={item.id}
+//                     draggable
+//                     onDragStart={(e) => handleDragStart(e, index)}
+//                     onDragOver={(e) => handleDragOver(e, index)}
+//                     onDragLeave={handleDragLeave}
+//                     onDrop={(e) => handleDrop(e, index)}
+//                     onDragEnd={handleDragEnd}
+//                     className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-move transition-all ${
+//                       draggedItem === index
+//                         ? 'opacity-50 border-blue-400 bg-blue-50'
+//                         : dragOverIndex === index
+//                         ? 'border-blue-400 bg-blue-50 scale-105'
+//                         : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+//                     }`}
+//                   >
+//                     <GripVertical className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    
+//                     <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-sm flex items-center justify-center font-bold text-white">
+//                       {index + 1}
+//                     </div>
+                    
+//                     <div className="flex-grow">
+//                       <p className="font-medium text-slate-700">{item.label}</p>
+//                       <p className="text-xs text-slate-500">
+//                         {index === 0 ? 'Closest' : index === rankings.length - 1 ? 'Farthest' : `Position ${index + 1}`}
+//                       </p>
+//                     </div>
+
+//                     <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-lg shadow-sm flex items-center justify-center font-bold text-slate-700 border-2 border-slate-200">
+//                       {item.id}
+//                     </div>
+//                   </div>
+//                 ))}
+//               </div>
+
+//               <button
+//                 onClick={submit}
+//                 disabled={submitted}
+//                 className={`w-full py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+//                   !submitted
+//                     ? 'bg-green-600 hover:bg-green-700 text-white'
+//                     : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+//                 }`}
+//               >
+//                 <Check className="w-5 h-5" />
+//                 {submitted ? 'Submitted!' : 'Submit Rankings'}
+//               </button>
+
+//               {submitted && (
+//                 <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+//                   <p className="text-green-800 font-medium text-center mb-2">
+//                     ✓ Rankings saved successfully!
+//                   </p>
+//                   {currentImageIndex < stimulusImages.length - 1 && (
+//                     <button
+//                       onClick={nextImage}
+//                       className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+//                     >
+//                       Next Stimulus →
+//                     </button>
+//                   )}
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   );
+// }
+
+
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Download, Upload, Info, CheckCircle } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, RotateCcw, GripVertical, Eye, AlertCircle, Wifi } from 'lucide-react';
 
-const DepthExperiment = () => {
-  const [stage, setStage] = useState('consent');
-  const [participantInfo, setParticipantInfo] = useState({
-    id: '',
-    age: '',
-    gender: '',
-    visualExperience: '',
-    consentGiven: false
-  });
+export default function DepthRankingApp() {
+  // Your Google Apps Script Web App URL
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz6g3hhpLaDd0Lli6zRKcxWWUGwrjcoLKZ0T3Pd4J9wQ35TS9UrgfSklOZaTcCZk8w1Mw/exec';
+
+  // Demo images - replace these with your actual image imports
+  const stimulusImages = [
+    { 
+      id: 1, 
+      url: 'https://images.unsplash.com/photo-1516117172878-fd2c41f4a759?w=800&h=600&fit=crop', 
+      objects: [
+        { id: 1, label: 'Object 1' },
+        { id: 2, label: 'Object 2' },
+        { id: 3, label: 'Object 3' },
+        { id: 4, label: 'Object 4' }
+      ]
+    },
+    { 
+      id: 2, 
+      url: 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=800&h=600&fit=crop', 
+      objects: [
+        { id: 1, label: 'Object 1' },
+        { id: 2, label: 'Object 2' },
+        { id: 3, label: 'Object 3' },
+        { id: 4, label: 'Object 4' }
+      ]
+    },
+    { 
+      id: 3, 
+      url: 'https://images.unsplash.com/photo-1415604934674-561df9abf539?w=800&h=600&fit=crop', 
+      objects: [
+        { id: 1, label: 'Object 1' },
+        { id: 2, label: 'Object 2' },
+        { id: 3, label: 'Object 3' },
+        { id: 4, label: 'Object 4' }
+      ]
+    },
+  ];
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [eyeClosed, setEyeClosed] = useState(null);
-  const [rankings, setRankings] = useState({});
+  const [rankings, setRankings] = useState(
+    stimulusImages[0].objects.map(obj => ({ ...obj, rank: obj.id }))
+  );
+  const [submitted, setSubmitted] = useState(false);
+  const [allResults, setAllResults] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
-  const [images, setImages] = useState([]);
-  const [results, setResults] = useState([]);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+  const [saveStatus, setSaveStatus] = useState(''); // 'saving', 'success', 'error'
+  const [connectionTested, setConnectionTested] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState(''); // 'testing', 'success', 'error'
+  
+  // Participant information
+  const [participantId, setParticipantId] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('');
+  const [dominantEye, setDominantEye] = useState('');
+  const [hasConsented, setHasConsented] = useState(false);
+  
+  const [sessionStartTime] = useState(new Date().toISOString());
+  const [showConsentForm, setShowConsentForm] = useState(true);
+  const [stimulusStartTime, setStimulusStartTime] = useState(new Date().toISOString());
+  const [studyComplete, setStudyComplete] = useState(false);
 
-  // Load images from storage on mount
-  useEffect(() => {
-    loadImagesFromStorage();
-  }, []);
+  const currentStimulus = stimulusImages[currentImageIndex];
 
-  const loadImagesFromStorage = async () => {
+  // Generate unique participant ID
+  const generateParticipantId = () => {
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `P${timestamp}${random}`;
+  };
+
+  // Test connection to Google Sheets
+  const testConnection = async () => {
+    setConnectionStatus('testing');
     try {
-      const imageList = await window.storage.list('experiment_image_');
-      if (imageList && imageList.keys && imageList.keys.length > 0) {
-        const loadedImages = [];
-        for (const key of imageList.keys) {
-          const result = await window.storage.get(key);
-          if (result) {
-            loadedImages.push(JSON.parse(result.value));
-          }
-        }
-        setImages(loadedImages);
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'GET',
+        redirect: 'follow'
+      });
+      
+      const data = await response.json();
+      console.log('Connection test response:', data);
+      
+      if (data.status === 'success') {
+        setConnectionStatus('success');
+        setConnectionTested(true);
+      } else {
+        setConnectionStatus('error');
       }
     } catch (error) {
-      console.log('No images loaded from storage yet');
+      console.error('Connection test failed:', error);
+      setConnectionStatus('error');
     }
   };
 
-  const handleConsentSubmit = (e) => {
-    e.preventDefault();
-    if (participantInfo.age && participantInfo.gender && participantInfo.consentGiven) {
-      setStage('instructions');
+  // Save to Google Sheets with better error handling
+  const saveToGoogleSheets = async (result) => {
+    setSaveStatus('saving');
+    
+    const payload = {
+      participantId: result.participantId,
+      age: age,
+      gender: gender,
+      dominantEye: dominantEye,
+      stimulusId: result.stimulusId,
+      rankings: result.rankings,
+      timeSpent: result.timeSpent,
+      timestamp: result.timestamp,
+      sessionId: sessionStartTime
+    };
+    
+    console.log('Sending to Google Sheets:', payload);
+    
+    try {
+      const response = await fetch(GOOGLE_SCRIPT_URL, {
+        method: 'POST',
+        redirect: 'follow',
+        headers: {
+          'Content-Type': 'text/plain',
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await response.json();
+      console.log('Google Sheets response:', data);
+      
+      if (data.status === 'success') {
+        setSaveStatus('success');
+        console.log('Data saved successfully:', data.message);
+      } else {
+        throw new Error(data.message || 'Unknown error');
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSaveStatus(''), 3000);
+      
+    } catch (error) {
+      console.error('Error saving to Google Sheets:', error);
+      setSaveStatus('error');
+      
+      // Fallback: Save to browser storage
+      try {
+        const existingData = JSON.parse(localStorage.getItem('depthStudyBackup') || '[]');
+        existingData.push({
+          ...result,
+          age,
+          gender,
+          dominantEye,
+          sessionId: sessionStartTime,
+          savedAt: new Date().toISOString()
+        });
+        localStorage.setItem('depthStudyBackup', JSON.stringify(existingData));
+        console.log('Data saved to local backup');
+      } catch (localError) {
+        console.error('Failed to save backup:', localError);
+      }
     }
   };
 
-  const startExperiment = () => {
-    if (images.length === 0) {
-      alert('Please upload experiment images first (Admin Panel)');
-      return;
-    }
-    const randomEye = Math.random() > 0.5 ? 'left' : 'right';
-    setEyeClosed(randomEye);
-    setStage('experiment');
-  };
-
-  const currentImage = images[currentImageIndex];
-  const currentRanking = rankings[currentImageIndex] || [];
-
-  const handleDragStart = (e, object) => {
-    setDraggedItem(object);
+  const handleDragStart = (e, index) => {
+    setDraggedItem(index);
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  const handleDragOver = (e) => {
+  const handleDragOver = (e, index) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
   };
 
-  const handleDrop = (e, targetIndex) => {
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
     e.preventDefault();
-    if (!draggedItem) return;
-
-    const newRanking = [...currentRanking];
-    const draggedIndex = newRanking.findIndex(obj => obj.id === draggedItem.id);
     
-    if (draggedIndex !== -1) {
-      newRanking.splice(draggedIndex, 1);
-    }
-    
-    newRanking.splice(targetIndex, 0, draggedItem);
-    
-    setRankings({
-      ...rankings,
-      [currentImageIndex]: newRanking
-    });
-    setDraggedItem(null);
-  };
-
-  const addToRanking = (object) => {
-    const newRanking = [...currentRanking, object];
-    setRankings({
-      ...rankings,
-      [currentImageIndex]: newRanking
-    });
-  };
-
-  const removeFromRanking = (objectId) => {
-    const newRanking = currentRanking.filter(obj => obj.id !== objectId);
-    setRankings({
-      ...rankings,
-      [currentImageIndex]: newRanking
-    });
-  };
-
-  const handleNext = () => {
-    if (currentRanking.length !== currentImage?.objects?.length) {
-      alert('Please rank all objects before proceeding');
+    if (draggedItem === null || draggedItem === dropIndex) {
+      setDraggedItem(null);
+      setDragOverIndex(null);
       return;
     }
 
+    const newRankings = [...rankings];
+    const draggedElement = newRankings[draggedItem];
+    
+    newRankings.splice(draggedItem, 1);
+    newRankings.splice(dropIndex, 0, draggedElement);
+    
+    const updatedRankings = newRankings.map((item, index) => ({
+      ...item,
+      rank: index + 1
+    }));
+
+    setRankings(updatedRankings);
+    setDraggedItem(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDragOverIndex(null);
+  };
+
+  const reset = () => {
+    setRankings(currentStimulus.objects.map(obj => ({ ...obj, rank: obj.id })));
+    setSubmitted(false);
+  };
+
+  const submit = async () => {
+    const currentTime = new Date().toISOString();
+    const timeSpent = Math.round((new Date(currentTime) - new Date(stimulusStartTime)) / 1000);
+    
     const result = {
-      imageId: currentImage.id,
-      participantId: participantInfo.id,
-      eyeClosed: eyeClosed,
-      ranking: currentRanking.map((obj, idx) => ({
-        objectId: obj.id,
-        rank: idx + 1
+      participantId: participantId,
+      stimulusId: currentStimulus.id,
+      rankings: rankings.map((r, idx) => ({ 
+        objectId: r.id, 
+        objectLabel: r.label, 
+        rankPosition: idx + 1 
       })),
-      timestamp: new Date().toISOString()
+      timestamp: currentTime,
+      timeSpent: timeSpent
     };
+    
+    // Save to Google Sheets
+    await saveToGoogleSheets(result);
+    
+    // Store locally for tracking
+    setAllResults(prev => [...prev, result]);
+    setSubmitted(true);
+  };
 
-    const newResults = [...results, result];
-    setResults(newResults);
-
-    if (currentImageIndex < images.length - 1) {
-      setCurrentImageIndex(currentImageIndex + 1);
-      const randomEye = Math.random() > 0.5 ? 'left' : 'right';
-      setEyeClosed(randomEye);
-    } else {
-      saveResults(newResults);
-      setStage('complete');
+  const nextImage = () => {
+    if (currentImageIndex < stimulusImages.length - 1) {
+      setCurrentImageIndex(prev => prev + 1);
+      setRankings(stimulusImages[currentImageIndex + 1].objects.map(obj => ({ ...obj, rank: obj.id })));
+      setSubmitted(false);
+      setSaveStatus('');
+      setStimulusStartTime(new Date().toISOString());
     }
   };
 
-  const saveResults = async (finalResults) => {
-    try {
-      const resultData = {
-        participantInfo,
-        results: finalResults,
-        completedAt: new Date().toISOString()
-      };
-      await window.storage.set(
-        `result_${participantInfo.id}_${Date.now()}`,
-        JSON.stringify(resultData)
-      );
-    } catch (error) {
-      console.error('Error saving results:', error);
+  const prevImage = () => {
+    if (currentImageIndex > 0) {
+      setCurrentImageIndex(prev => prev - 1);
+      setRankings(stimulusImages[currentImageIndex - 1].objects.map(obj => ({ ...obj, rank: obj.id })));
+      setSubmitted(false);
+      setSaveStatus('');
+      setStimulusStartTime(new Date().toISOString());
     }
   };
 
-  const downloadResults = () => {
-    const data = {
-      participantInfo,
-      results,
-      completedAt: new Date().toISOString()
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `depth_experiment_${participantInfo.id}_${Date.now()}.json`;
-    a.click();
+  const startStudy = () => {
+    if (hasConsented && age && gender && dominantEye) {
+      const newParticipantId = generateParticipantId();
+      setParticipantId(newParticipantId);
+      setShowConsentForm(false);
+      setStimulusStartTime(new Date().toISOString());
+    }
   };
 
-  // Admin Panel Component
-  const AdminPanel = () => {
-    const [imageUrl, setImageUrl] = useState('');
-    const [imageId, setImageId] = useState('');
-    const [objects, setObjects] = useState([{ id: 1, label: 'Object 1' }]);
-
-    const handleAddObject = () => {
-      setObjects([...objects, { id: objects.length + 1, label: `Object ${objects.length + 1}` }]);
-    };
-
-    const handleObjectChange = (index, value) => {
-      const newObjects = [...objects];
-      newObjects[index].label = value;
-      setObjects(newObjects);
-    };
-
-    const handleSaveImage = async () => {
-      if (!imageUrl || !imageId || objects.length < 3) {
-        alert('Please provide image URL, ID, and at least 3 objects');
-        return;
-      }
-
-      const imageData = {
-        id: imageId,
-        url: imageUrl,
-        objects: objects.filter(obj => obj.label.trim() !== '')
-      };
-
-      try {
-        await window.storage.set(`experiment_image_${imageId}`, JSON.stringify(imageData));
-        alert('Image saved successfully!');
-        await loadImagesFromStorage();
-        setImageUrl('');
-        setImageId('');
-        setObjects([{ id: 1, label: 'Object 1' }]);
-      } catch (error) {
-        console.error('Error saving image:', error);
-        alert('Error saving image');
-      }
-    };
-
-    const downloadAllResults = async () => {
-      try {
-        const resultsList = await window.storage.list('result_');
-        if (resultsList && resultsList.keys) {
-          const allResults = [];
-          for (const key of resultsList.keys) {
-            const result = await window.storage.get(key);
-            if (result) {
-              allResults.push(JSON.parse(result.value));
-            }
-          }
-          const blob = new Blob([JSON.stringify(allResults, null, 2)], { type: 'application/json' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `all_results_${Date.now()}.json`;
-          a.click();
-        }
-      } catch (error) {
-        console.error('Error downloading results:', error);
-      }
-    };
-
-    return (
-      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-6">Admin Panel - Upload Experiment Images</h2>
-        
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Image ID</label>
-          <input
-            type="text"
-            value={imageId}
-            onChange={(e) => setImageId(e.target.value)}
-            className="w-full p-2 border rounded"
-            placeholder="e.g., img_001"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Image URL</label>
-          <input
-            type="text"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            className="w-full p-2 border rounded"
-            placeholder="https://example.com/image.jpg"
-          />
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">Annotated Objects (3-4 objects)</label>
-          {objects.map((obj, idx) => (
-            <input
-              key={obj.id}
-              type="text"
-              value={obj.label}
-              onChange={(e) => handleObjectChange(idx, e.target.value)}
-              className="w-full p-2 border rounded mb-2"
-              placeholder={`Object ${idx + 1} label`}
-            />
-          ))}
-          {objects.length < 4 && (
-            <button
-              onClick={handleAddObject}
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Add Object
-            </button>
-          )}
-        </div>
-
-        <div className="flex gap-4">
-          <button
-            onClick={handleSaveImage}
-            className="px-6 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Save Image
-          </button>
-          <button
-            onClick={downloadAllResults}
-            className="px-6 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center gap-2"
-          >
-            <Download size={20} />
-            Download All Results
-          </button>
-        </div>
-
-        <div className="mt-6">
-          <h3 className="text-lg font-semibold mb-2">Loaded Images: {images.length}</h3>
-          <button
-            onClick={() => setStage('consent')}
-            className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
-          >
-            Go to Experiment
-          </button>
-        </div>
-      </div>
-    );
+  const restartStudy = () => {
+    // Reset all state for new participant
+    setCurrentImageIndex(0);
+    setRankings(stimulusImages[0].objects.map(obj => ({ ...obj, rank: obj.id })));
+    setSubmitted(false);
+    setAllResults([]);
+    setAge('');
+    setGender('');
+    setDominantEye('');
+    setHasConsented(false);
+    setShowConsentForm(true);
+    setStudyComplete(false);
+    setSaveStatus('');
+    setConnectionTested(false);
+    setConnectionStatus('');
+    setStimulusStartTime(new Date().toISOString());
   };
 
-  if (stage === 'admin') {
-    return <AdminPanel />;
-  }
+  // Check if study is complete
+  useEffect(() => {
+    if (allResults.length === stimulusImages.length && allResults.length > 0) {
+      setStudyComplete(true);
+    }
+  }, [allResults.length, stimulusImages.length]);
 
-  if (stage === 'consent') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">Depth Perception Study</h1>
-          
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-            <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-              <Info size={24} />
-              Study Information
-            </h2>
-            <p className="text-gray-700 mb-2">
-              You will be shown images with occluded objects and asked to rank visible objects by their depth (nearest to farthest).
-            </p>
-            <p className="text-gray-700 mb-2">
-              Duration: Approximately 15-20 minutes
-            </p>
-            <p className="text-gray-700">
-              You will be asked to close one eye during the experiment for monocular depth estimation.
-            </p>
-          </div>
+  const canStart = hasConsented && age && gender && dominantEye;
 
-          <form onSubmit={handleConsentSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Participant ID</label>
-              <input
-                type="text"
-                required
-                value={participantInfo.id}
-                onChange={(e) => setParticipantInfo({...participantInfo, id: e.target.value})}
-                className="w-full p-2 border rounded"
-                placeholder="Enter your ID"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Age</label>
-              <input
-                type="number"
-                required
-                min="18"
-                max="50"
-                value={participantInfo.age}
-                onChange={(e) => setParticipantInfo({...participantInfo, age: e.target.value})}
-                className="w-full p-2 border rounded"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Gender</label>
-              <select
-                required
-                value={participantInfo.gender}
-                onChange={(e) => setParticipantInfo({...participantInfo, gender: e.target.value})}
-                className="w-full p-2 border rounded"
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-8">
+      {showConsentForm ? (
+        <div className="max-w-3xl mx-auto mt-12">
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <h1 className="text-3xl font-bold text-slate-800 mb-6 text-center">
+              Depth Perception Study
+            </h1>
+            
+            {/* Connection Test */}
+            <div className="mb-6">
+              <button
+                onClick={testConnection}
+                disabled={connectionStatus === 'testing'}
+                className="w-full py-3 px-4 bg-blue-50 hover:bg-blue-100 border-2 border-blue-200 rounded-lg transition-colors flex items-center justify-center gap-2"
               >
-                <option value="">Select...</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-                <option value="prefer-not-to-say">Prefer not to say</option>
-              </select>
+                <Wifi className="w-5 h-5" />
+                {connectionStatus === 'testing' && 'Testing connection...'}
+                {connectionStatus === 'success' && '✓ Connected to Google Sheets'}
+                {connectionStatus === 'error' && '✗ Connection failed - check console'}
+                {!connectionStatus && 'Test Connection to Google Sheets'}
+              </button>
+              {connectionStatus === 'success' && (
+                <p className="text-xs text-green-600 mt-2 text-center">
+                  Your responses will be saved to Google Sheets
+                </p>
+              )}
+              {connectionStatus === 'error' && (
+                <p className="text-xs text-red-600 mt-2 text-center">
+                  Connection failed. Data will be saved locally as backup. Check browser console for details.
+                </p>
+              )}
             </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-2">Experience with visual tasks</label>
-              <select
-                required
-                value={participantInfo.visualExperience}
-                onChange={(e) => setParticipantInfo({...participantInfo, visualExperience: e.target.value})}
-                className="w-full p-2 border rounded"
-              >
-                <option value="">Select...</option>
-                <option value="none">None</option>
-                <option value="some">Some</option>
-                <option value="extensive">Extensive</option>
-              </select>
+            {/* Instructions */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h2 className="text-lg font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <Eye className="w-5 h-5" />
+                Study Instructions
+              </h2>
+              <ul className="space-y-2 text-slate-700">
+                <li className="flex gap-2">
+                  <span className="font-semibold">•</span>
+                  <span>You will be shown {stimulusImages.length} images with marked objects.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-semibold">•</span>
+                  <span>For each image, rank the objects by their depth from <strong>nearest to farthest</strong>.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-semibold">•</span>
+                  <span><strong>Important:</strong> Close one eye during the experiment for monocular depth estimation.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-semibold">•</span>
+                  <span>Use drag-and-drop to arrange objects in order.</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-semibold">•</span>
+                  <span>Take your time and be as accurate as possible.</span>
+                </li>
+              </ul>
             </div>
 
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                required
-                checked={participantInfo.consentGiven}
-                onChange={(e) => setParticipantInfo({...participantInfo, consentGiven: e.target.checked})}
-                className="mt-1"
-              />
-              <label className="text-sm">
-                I confirm that I have normal or corrected vision, no color blindness, and consent to participate in this study.
+            {/* Participant Information */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Participant Information</h3>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Age
+                  </label>
+                  <input
+                    type="number"
+                    value={age}
+                    onChange={(e) => setAge(e.target.value)}
+                    placeholder="Enter your age"
+                    min="18"
+                    max="100"
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Gender
+                  </label>
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="">Select gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                    <option value="prefer-not-to-say">Prefer not to say</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Dominant Eye
+                  </label>
+                  <select
+                    value={dominantEye}
+                    onChange={(e) => setDominantEye(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-lg focus:border-blue-500 focus:outline-none"
+                  >
+                    <option value="">Select dominant eye</option>
+                    <option value="left">Left</option>
+                    <option value="right">Right</option>
+                    <option value="unsure">Not sure</option>
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Tip: To find your dominant eye, form a triangle with your hands and look at a distant object through it. Close one eye at a time - your dominant eye keeps the object centered.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Consent */}
+            <div className="mb-6 p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={hasConsented}
+                  onChange={(e) => setHasConsented(e.target.checked)}
+                  className="mt-1 w-5 h-5 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
+                />
+                <span className="text-sm text-slate-700">
+                  I confirm that I have <strong>normal or corrected vision</strong>, <strong>no color blindness</strong>, 
+                  and consent to participate in this study. I understand that my responses will be recorded anonymously 
+                  for research purposes.
+                </span>
               </label>
             </div>
 
             <button
-              type="submit"
-              className="w-full bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition"
+              onClick={startStudy}
+              disabled={!canStart}
+              className={`w-full py-4 rounded-lg font-semibold transition-colors ${
+                canStart
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                  : 'bg-slate-300 text-slate-500 cursor-not-allowed'
+              }`}
             >
-              Continue to Instructions
+              {!canStart ? 'Please complete all fields and consent' : 'Begin Study'}
             </button>
-          </form>
-
-          <button
-            onClick={() => setStage('admin')}
-            className="mt-4 text-sm text-gray-500 hover:text-gray-700"
-          >
-            Admin Panel
-          </button>
+          </div>
         </div>
-      </div>
-    );
-  }
-
-  if (stage === 'instructions') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8">
-          <h1 className="text-3xl font-bold text-gray-800 mb-6">Instructions</h1>
-          
-          <div className="space-y-4 text-gray-700">
-            <div className="p-4 bg-yellow-50 border-l-4 border-yellow-400">
-              <p className="font-semibold">Important: Monocular Vision</p>
-              <p>You will be instructed to close one eye (left or right) for each image. Please keep that eye closed throughout the ranking task.</p>
+      ) : studyComplete ? (
+        <div className="max-w-2xl mx-auto mt-20">
+          <div className="bg-white rounded-xl shadow-lg p-8 text-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Check className="w-10 h-10 text-green-600" />
             </div>
-
-            <ol className="list-decimal list-inside space-y-3">
-              <li>You will see an image with numbered objects marked on it.</li>
-              <li>One object in each image is occluded (hidden with a mask).</li>
-              <li>Your task is to rank the visible numbered objects from <strong>nearest to farthest</strong>.</li>
-              <li>Drag and drop objects to arrange them in order.</li>
-              <li>Once all objects are ranked, click "Next" to proceed.</li>
-            </ol>
-
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <p className="font-semibold mb-2">Tips:</p>
-              <ul className="list-disc list-inside space-y-1">
-                <li>Use depth cues like size, position, texture, and overlap</li>
-                <li>Take your time - there's no time limit</li>
-                <li>Trust your perception</li>
-              </ul>
+            <h2 className="text-3xl font-bold text-slate-800 mb-4">
+              Study Complete!
+            </h2>
+            <p className="text-lg text-slate-600 mb-6">
+              Thank you for participating in this depth perception study. Your responses have been saved to Google Sheets.
+            </p>
+            <div className="bg-slate-50 rounded-lg p-4 mb-6">
+              <p className="text-sm text-slate-600">
+                <strong>Participant ID:</strong> {participantId}
+              </p>
+              <p className="text-sm text-slate-600">
+                <strong>Completed Stimuli:</strong> {allResults.length} / {stimulusImages.length}
+              </p>
+            </div>
+            <button
+              onClick={restartStudy}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+            >
+              Start New Participant
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-8">
+            <h1 className="text-4xl font-bold text-slate-800 mb-2">
+              Depth Perception Study
+            </h1>
+            <p className="text-slate-600 mb-4">
+              Drag objects to rank them from <span className="font-semibold text-blue-600">closest (top)</span> to <span className="font-semibold text-purple-600">farthest (bottom)</span>
+            </p>
+            <div className="flex items-center justify-center gap-4 flex-wrap">
+              <div className="bg-white px-4 py-2 rounded-lg shadow-sm">
+                <span className="text-sm text-slate-600">Stimulus </span>
+                <span className="font-bold text-slate-800">{currentImageIndex + 1}</span>
+                <span className="text-sm text-slate-600"> of {stimulusImages.length}</span>
+              </div>
+              <div className="bg-white px-4 py-2 rounded-lg shadow-sm">
+                <span className="text-sm text-slate-600">Completed: </span>
+                <span className="font-bold text-green-600">{allResults.length}</span>
+              </div>
+              <div className="bg-amber-100 px-4 py-2 rounded-lg shadow-sm border border-amber-300">
+                <span className="text-sm text-amber-800 font-medium">👁️ Remember: Keep one eye closed</span>
+              </div>
+              
+              {/* Save Status Indicator */}
+              {saveStatus === 'saving' && (
+                <div className="bg-blue-100 px-4 py-2 rounded-lg shadow-sm border border-blue-300">
+                  <span className="text-sm text-blue-800 font-medium">💾 Saving...</span>
+                </div>
+              )}
+              {saveStatus === 'success' && (
+                <div className="bg-green-100 px-4 py-2 rounded-lg shadow-sm border border-green-300">
+                  <span className="text-sm text-green-800 font-medium">✓ Saved to Google Sheets</span>
+                </div>
+              )}
+              {saveStatus === 'error' && (
+                <div className="bg-red-100 px-4 py-2 rounded-lg shadow-sm border border-red-300">
+                  <span className="text-sm text-red-800 font-medium">⚠ Saved locally (backup)</span>
+                </div>
+              )}
             </div>
           </div>
 
-          <button
-            onClick={startExperiment}
-            className="w-full mt-6 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition"
-          >
-            Start Experiment
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (stage === 'experiment' && currentImage) {
-    const availableObjects = currentImage.objects.filter(
-      obj => !currentRanking.find(ranked => ranked.id === obj.id)
-    );
-
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-bold">Image {currentImageIndex + 1} of {images.length}</h2>
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-100 rounded-lg">
-                {eyeClosed === 'left' ? <EyeOff size={24} /> : <Eye size={24} />}
-                <span className="font-semibold">Close your {eyeClosed} eye</span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Image Section */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-slate-800">Stimulus</h2>
+                <div className="flex gap-2">
+                  <button
+                    onClick={prevImage}
+                    disabled={currentImageIndex === 0}
+                    className="p-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                    title="Previous stimulus"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    disabled={currentImageIndex === stimulusImages.length - 1}
+                    className="p-2 bg-slate-100 hover:bg-slate-200 disabled:opacity-30 disabled:cursor-not-allowed rounded-lg transition-colors"
+                    title="Next stimulus"
+                  >
+                    <ChevronRight className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div>
+              <div className="relative">
                 <img
-                  src={currentImage.url}
-                  alt="Experiment stimulus"
+                  src={currentStimulus.url}
+                  alt={`Stimulus ${currentStimulus.id}`}
                   className="w-full rounded-lg shadow-md"
                 />
+                <div className="absolute top-4 right-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg text-sm font-medium">
+                  Image {currentImageIndex + 1}
+                </div>
               </div>
-
-              <div>
-                <h3 className="text-lg font-semibold mb-3">Available Objects</h3>
-                <div className="space-y-2 mb-6">
-                  {availableObjects.map(obj => (
-                    <div
-                      key={obj.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, obj)}
-                      onClick={() => addToRanking(obj)}
-                      className="p-3 bg-gray-100 rounded cursor-move hover:bg-gray-200 transition"
-                    >
-                      {obj.label}
-                    </div>
-                  ))}
-                </div>
-
-                <h3 className="text-lg font-semibold mb-3">
-                  Rank Objects (Nearest → Farthest)
-                </h3>
-                <div className="space-y-2">
-                  {currentRanking.map((obj, idx) => (
-                    <div
-                      key={obj.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, obj)}
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, idx)}
-                      className="p-3 bg-indigo-100 rounded cursor-move hover:bg-indigo-200 transition flex justify-between items-center"
-                    >
-                      <span>
-                        <strong>{idx + 1}.</strong> {obj.label}
-                      </span>
-                      <button
-                        onClick={() => removeFromRanking(obj.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                  {currentRanking.length < currentImage.objects.length && (
-                    <div
-                      onDragOver={handleDragOver}
-                      onDrop={(e) => handleDrop(e, currentRanking.length)}
-                      className="p-8 border-2 border-dashed border-gray-300 rounded text-center text-gray-500"
-                    >
-                      Drop or click objects here
-                    </div>
-                  )}
-                </div>
+              
+              {/* Note about demo images */}
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-xs text-yellow-800 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span><strong>Note:</strong> Replace the demo images in the code with your actual study images before deployment.</span>
+                </p>
               </div>
             </div>
 
-            <button
-              onClick={handleNext}
-              disabled={currentRanking.length !== currentImage.objects.length}
-              className="w-full mt-6 bg-indigo-600 text-white py-3 rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {currentImageIndex < images.length - 1 ? 'Next Image' : 'Complete Experiment'}
-            </button>
+            {/* Ranking Section */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-slate-800">Rankings</h2>
+                <button
+                  onClick={reset}
+                  className="flex items-center gap-2 px-3 py-2 text-sm bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Reset
+                </button>
+              </div>
+
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <p className="text-sm text-blue-800 text-center">
+                  💡 <span className="font-medium">Drag and drop</span> to reorder objects
+                </p>
+              </div>
+
+              <div className="space-y-2 mb-6">
+                {rankings.map((item, index) => (
+                  <div
+                    key={item.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-move transition-all ${
+                      draggedItem === index
+                        ? 'opacity-50 border-blue-400 bg-blue-50'
+                        : dragOverIndex === index
+                        ? 'border-blue-400 bg-blue-50 scale-105'
+                        : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md'
+                    }`}
+                  >
+                    <GripVertical className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                    
+                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg shadow-sm flex items-center justify-center font-bold text-white">
+                      {index + 1}
+                    </div>
+                    
+                    <div className="flex-grow">
+                      <p className="font-medium text-slate-700">{item.label}</p>
+                      <p className="text-xs text-slate-500">
+                        {index === 0 ? 'Closest' : index === rankings.length - 1 ? 'Farthest' : `Position ${index + 1}`}
+                      </p>
+                    </div>
+
+                    <div className="flex-shrink-0 w-12 h-12 bg-slate-100 rounded-lg shadow-sm flex items-center justify-center font-bold text-slate-700 border-2 border-slate-200">
+                      {item.id}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={submit}
+                disabled={submitted}
+                className={`w-full py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2 ${
+                  !submitted
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                <Check className="w-5 h-5" />
+                {submitted ? 'Submitted!' : 'Submit Rankings'}
+              </button>
+
+              {submitted && (
+                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <p className="text-green-800 font-medium text-center mb-2">
+                    ✓ Rankings saved successfully!
+                  </p>
+                  {currentImageIndex < stimulusImages.length - 1 && (
+                    <button
+                      onClick={nextImage}
+                      className="w-full mt-2 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+                    >
+                      Next Stimulus →
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    );
-  }
-
-  if (stage === 'complete') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-8 text-center">
-          <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
-          <h1 className="text-3xl font-bold text-gray-800 mb-4">Experiment Complete!</h1>
-          <p className="text-gray-700 mb-6">
-            Thank you for participating in our depth perception study. Your responses have been recorded.
-          </p>
-          <button
-            onClick={downloadResults}
-            className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 mx-auto"
-          >
-            <Download size={20} />
-            Download Your Results
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return null;
-};
-
-export default DepthExperiment;
+      )}
+    </div>
+  );
+}
