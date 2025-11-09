@@ -1,15 +1,15 @@
 {
   "files": {
-    "main.css": "/Computer_vision_project/static/css/main.acf683f6.css",
-    "main.js": "/Computer_vision_project/static/js/main.91dfc940.js",
+    "main.css": "/Computer_vision_project/static/css/main.c2f098e0.css",
+    "main.js": "/Computer_vision_project/static/js/main.083a1d87.js",
     "static/js/453.13fb2f8b.chunk.js": "/Computer_vision_project/static/js/453.13fb2f8b.chunk.js",
     "index.html": "/Computer_vision_project/index.html",
-    "main.acf683f6.css.map": "/Computer_vision_project/static/css/main.acf683f6.css.map",
-    "main.91dfc940.js.map": "/Computer_vision_project/static/js/main.91dfc940.js.map",
+    "main.c2f098e0.css.map": "/Computer_vision_project/static/css/main.c2f098e0.css.map",
+    "main.083a1d87.js.map": "/Computer_vision_project/static/js/main.083a1d87.js.map",
     "453.13fb2f8b.chunk.js.map": "/Computer_vision_project/static/js/453.13fb2f8b.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.acf683f6.css",
-    "static/js/main.91dfc940.js"
+    "static/css/main.c2f098e0.css",
+    "static/js/main.083a1d87.js"
   ]
 }
