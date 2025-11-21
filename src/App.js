@@ -289,7 +289,7 @@ export default function DepthRankingApp() {
       const newParticipantId = generateParticipantId();
       setParticipantId(newParticipantId);
       
-      const eyeToCloseValue = dominantEye === 'left' ? 'right' : 'left';
+      const eyeToCloseValue = dominantEye === 'left' ? 'left' : 'right';
       setEyeToClose(eyeToCloseValue);
       
       setShowConsentForm(false);
@@ -406,7 +406,7 @@ export default function DepthRankingApp() {
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold">•</span>
-                  <span><strong>Important:</strong> You will close your non-dominant eye for monocular depth estimation.</span>
+                  <span><strong>Important:</strong> You will close your dominant eye for monocular depth estimation.</span>
                 </li>
                 <li className="flex gap-2">
                   <span className="font-semibold">•</span>
