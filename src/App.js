@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Check, ChevronLeft, ChevronRight, RotateCcw, GripVertical, Eye, AlertCircle, Wifi } from 'lucide-react';
 
 export default function DepthRankingApp() {
-  // Your Google Apps Script Web App URL
-  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxOAxQUeFe8KbjFT5t8ClEjZRpXMCeZ0ChpBDacKdfeEV9NmiXdYWudd5BvEBHwutJiag/exec';
+  const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbztOnk-NdBYlMVy7HdXYCY3O77nbbUCuTHbN5VksOjbMHQ62cROOXb7h5N2u_m7IV6cnw/exec';
 
-  // Annotation data mapping stimulus IDs to color labels
   const annotations = {
     "39": ["r", "g", "b"],
     "272": ["y", "b", "g"],
@@ -24,7 +22,6 @@ export default function DepthRankingApp() {
     "1449": ["g", "y", "r"]
   };
 
-  // Color name mapping for display
   const colorNames = {
     "r": "Red",
     "g": "Green",
@@ -32,26 +29,43 @@ export default function DepthRankingApp() {
     "y": "Yellow"
   };
 
-  // Generate stimulus images from your JPG files
-  const stimulusImages = Object.keys(annotations).map(id => {
-    const paddedId = id.padStart(4, '0');
-    const imageUrl = `${process.env.PUBLIC_URL}/stimulus/${paddedId}.jpg`;
-    console.log('Loading image:', imageUrl);
-    return {
-      id: id,
-      url: imageUrl,
-      objects: annotations[id].map((color, index) => ({
+  // Shuffle function using Fisher-Yates algorithm
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Generate stimulus images with shuffled objects
+  const generateStimulusImages = () => {
+    return Object.keys(annotations).map(id => {
+      const paddedId = id.padStart(4, '0');
+      const imageUrl = `${process.env.PUBLIC_URL}/stimulus/${paddedId}.jpg`;
+      
+      // Create objects with their color codes
+      const objects = annotations[id].map((color, index) => ({
         id: index + 1,
         label: colorNames[color],
         color: color
-      }))
-    };
-  });
+      }));
+      
+      // Shuffle the objects for random display order
+      const shuffledObjects = shuffleArray(objects);
+      
+      return {
+        id: id,
+        url: imageUrl,
+        objects: shuffledObjects
+      };
+    });
+  };
 
+  const [stimulusImages] = useState(generateStimulusImages());
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [rankings, setRankings] = useState(
-    stimulusImages[0].objects.map(obj => ({ ...obj, rank: obj.id }))
-  );
+  const [rankings, setRankings] = useState([]);
   const [submitted, setSubmitted] = useState(false);
   const [allResults, setAllResults] = useState([]);
   const [draggedItem, setDraggedItem] = useState(null);
@@ -59,7 +73,6 @@ export default function DepthRankingApp() {
   const [saveStatus, setSaveStatus] = useState('');
   const [connectionStatus, setConnectionStatus] = useState('');
   
-  // Participant information
   const [participantId, setParticipantId] = useState('');
   const [name, setName] = useState('');
   const [enrollmentNumber, setEnrollmentNumber] = useState('');
@@ -79,14 +92,19 @@ export default function DepthRankingApp() {
 
   const currentStimulus = stimulusImages[currentImageIndex];
 
-  // Generate unique participant ID
+  // Initialize rankings when component mounts or image changes
+  useEffect(() => {
+    if (currentStimulus) {
+      setRankings(currentStimulus.objects.map((obj, idx) => ({ ...obj, rank: idx + 1 })));
+    }
+  }, [currentImageIndex]);
+
   const generateParticipantId = () => {
     const timestamp = Date.now();
     const random = Math.floor(Math.random() * 1000);
     return `P${timestamp}${random}`;
   };
 
-  // Test connection to Google Sheets
   const testConnection = async () => {
     setConnectionStatus('testing');
     try {
@@ -96,7 +114,6 @@ export default function DepthRankingApp() {
       });
       
       const data = await response.json();
-      console.log('Connection test response:', data);
       
       if (data.status === 'success') {
         setConnectionStatus('success');
@@ -109,7 +126,6 @@ export default function DepthRankingApp() {
     }
   };
 
-  // Save ALL data to Google Sheets when study is complete
   const syncAllToGoogleSheets = async () => {
     setSaveStatus('syncing');
     
@@ -149,14 +165,6 @@ export default function DepthRankingApp() {
       if (data.status === 'success') {
         setSaveStatus('success');
         console.log('All data synced successfully');
-        
-        try {
-          const storageKey = `depthStudy_${participantId}`;
-          localStorage.removeItem(storageKey);
-          console.log('Local backup cleared');
-        } catch (e) {
-          console.error('Error clearing localStorage:', e);
-        }
       } else {
         throw new Error(data.message || 'Sync failed');
       }
@@ -164,7 +172,7 @@ export default function DepthRankingApp() {
     } catch (error) {
       console.error('Error syncing to Google Sheets:', error);
       setSaveStatus('error');
-      alert('Unable to sync data to Google Sheets. Your data is safely stored locally. Please contact the researcher.');
+      alert('Unable to sync data to Google Sheets. Please contact the researcher.');
     }
   };
 
@@ -213,7 +221,7 @@ export default function DepthRankingApp() {
   };
 
   const reset = () => {
-    setRankings(currentStimulus.objects.map(obj => ({ ...obj, rank: obj.id })));
+    setRankings(currentStimulus.objects.map((obj, idx) => ({ ...obj, rank: idx + 1 })));
     setSubmitted(false);
   };
 
@@ -221,13 +229,12 @@ export default function DepthRankingApp() {
     const currentTime = new Date().toISOString();
     const timeSpent = Math.round((new Date(currentTime) - new Date(stimulusStartTime)) / 1000);
     
+    // Save as color codes (r, g, b, y) instead of object IDs
     const result = {
       participantId: participantId,
       stimulusId: currentStimulus.id,
       rankings: rankings.map((r, idx) => ({ 
-        objectId: r.id, 
-        objectLabel: r.label,
-        objectColor: r.color,
+        objectColor: r.color,  // Save color code (r/g/b/y)
         rankPosition: idx + 1 
       })),
       timestamp: currentTime,
@@ -236,25 +243,6 @@ export default function DepthRankingApp() {
     
     const updatedResults = [...allResults, result];
     setAllResults(updatedResults);
-    
-    try {
-      const storageKey = `depthStudy_${participantId}`;
-      localStorage.setItem(storageKey, JSON.stringify({
-        participantId,
-        name,
-        enrollmentNumber,
-        age,
-        gender,
-        dominantEye,
-        eyeToClose,
-        sessionId: sessionStartTime,
-        results: updatedResults
-      }));
-      setSaveStatus('success');
-    } catch (error) {
-      console.error('Error saving to localStorage:', error);
-      setSaveStatus('error');
-    }
     
     setSubmitted(true);
     setCurrentTimeSpent(0);
@@ -265,7 +253,6 @@ export default function DepthRankingApp() {
       
       if (currentImageIndex < stimulusImages.length - 1) {
         setCurrentImageIndex(prev => prev + 1);
-        setRankings(stimulusImages[currentImageIndex + 1].objects.map(obj => ({ ...obj, rank: obj.id })));
         setSubmitted(false);
         setStimulusStartTime(new Date().toISOString());
       }
@@ -275,7 +262,6 @@ export default function DepthRankingApp() {
   const prevImage = () => {
     if (currentImageIndex > 0) {
       setCurrentImageIndex(prev => prev - 1);
-      setRankings(stimulusImages[currentImageIndex - 1].objects.map(obj => ({ ...obj, rank: obj.id })));
       setSubmitted(false);
       setSaveStatus('');
       setCurrentTimeSpent(0);
@@ -297,7 +283,6 @@ export default function DepthRankingApp() {
       
       setTimeout(() => {
         setShowEyeInstruction(false);
-        // Start timing only AFTER instruction screen
         setStimulusStartTime(new Date().toISOString());
       }, 3000);
     }
@@ -305,7 +290,7 @@ export default function DepthRankingApp() {
 
   const restartStudy = () => {
     setCurrentImageIndex(0);
-    setRankings(stimulusImages[0].objects.map(obj => ({ ...obj, rank: obj.id })));
+    setRankings([]);
     setSubmitted(false);
     setAllResults([]);
     setName('');
@@ -325,7 +310,6 @@ export default function DepthRankingApp() {
     setStimulusStartTime(null);
   };
 
-  // Timer effect - tracks time spent on current stimulus
   useEffect(() => {
     if (!stimulusStartTime || submitted || showConsentForm || showEyeInstruction || studyComplete) {
       return;
@@ -335,11 +319,9 @@ export default function DepthRankingApp() {
       const elapsed = Math.floor((new Date() - new Date(stimulusStartTime)) / 1000);
       setCurrentTimeSpent(elapsed);
       
-      // Show warning at 15 seconds
       if (elapsed === 15) {
         setShowTimeWarning(true);
       }
-      // Hide warning after 3 seconds
       if (elapsed === 18) {
         setShowTimeWarning(false);
       }
@@ -385,7 +367,7 @@ export default function DepthRankingApp() {
               )}
               {connectionStatus === 'error' && (
                 <p className="text-xs text-red-600 mt-2 text-center">
-                  Connection failed. Data will be saved locally as backup. Check browser console for details.
+                  Connection failed. Check browser console for details.
                 </p>
               )}
             </div>
@@ -587,10 +569,7 @@ export default function DepthRankingApp() {
             {saveStatus === 'error' && (
               <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-4 mb-6">
                 <p className="text-amber-800 font-medium">
-                  ⚠️ Your data is safely stored locally but could not sync to Google Sheets.
-                </p>
-                <p className="text-sm text-amber-700 mt-2">
-                  Please contact the researcher. Your responses are not lost.
+                  ⚠️ Could not sync to Google Sheets. Please contact the researcher.
                 </p>
               </div>
             )}
@@ -641,15 +620,9 @@ export default function DepthRankingApp() {
                   <span className="text-sm text-green-800 font-medium">✓ Saved!</span>
                 </div>
               )}
-              {saveStatus === 'error' && (
-                <div className="bg-red-100 px-4 py-2 rounded-lg shadow-sm border border-red-300">
-                  <span className="text-sm text-red-800 font-medium">⚠ Saved locally only</span>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-8"> */}
           <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-8">
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-4">
@@ -673,7 +646,6 @@ export default function DepthRankingApp() {
                 </div>
               </div>
               
-              {/* Time Warning Banner */}
               {showTimeWarning && (
                 <div className="mb-4 p-4 bg-gradient-to-r from-red-500 to-orange-500 rounded-lg shadow-lg border-2 border-red-600 animate-pulse">
                   <div className="flex items-center gap-3 text-white">
@@ -699,7 +671,6 @@ export default function DepthRankingApp() {
               </div>
             </div>
 
-            {/* <div className="bg-white rounded-xl shadow-lg p-6"> */}
             <div className="bg-white rounded-xl shadow-lg p-2">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-slate-800">Rankings</h2>
